@@ -8,50 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Firebase SDK Imports -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global variables provided by the environment, which will contain the Firebase config and auth token
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        // We will store our authenticated user here
-        let userId = null;
-
-        // Sign in the user on page load
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                console.log("User is signed in:", userId);
-                window.setupApp(db, auth, userId, appId);
-            } else {
-                console.log("Signing in anonymously...");
-                await signInAnonymously(auth).catch(error => console.error("Firebase Auth Error:", error));
-            }
-        });
-
-        // Store references globally for our main script to access
-        window.firebase = {
-            db,
-            auth,
-            collection,
-            doc,
-            addDoc,
-            setDoc,
-            deleteDoc,
-            onSnapshot
-        };
-    </script>
-    
     <style>
         :root {
             color-scheme: light;
@@ -378,13 +334,39 @@
 
     </div>
     
-    <script type="module">
+    <script>
         window.onload = function() {
             // Caching DOM Elements
             const themeToggle = document.getElementById('themeToggle');
             const sunIcon = document.getElementById('sunIcon');
             const moonIcon = document.getElementById('moonIcon');
             const body = document.body;
+            
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const totalSavedEl = document.getElementById('totalSaved');
+            const savingsChartCtx = document.getElementById('savingsChart').getContext('2d');
+            const savingsListEl = document.getElementById('savingsList');
+            const filterCategoryEl = document.getElementById('filterCategory');
+            const amountInput = document.getElementById('amountInput');
+            const noteInput = document.getElementById('noteInput');
+            const categorySelect = document.getElementById('categorySelect');
+            const actionButton = document.getElementById('actionButton');
+            const cancelButton = document.getElementById('cancelButton');
+            const messageEl = document.getElementById('message');
+            const goalNameInput = document.getElementById('goalNameInput');
+            const goalInput = document.getElementById('goalInput');
+            const setGoalButton = document.getElementById('setGoalButton');
+            const resetGoalButton = document.getElementById('resetGoalButton');
+            const goalProgressBar = document.getElementById('goalProgressBar');
+            const goalProgressText = document.getElementById('goalProgressText');
+            const goalRemainingText = document.getElementById('goalRemainingText');
+            const monthlyReportsContainer = document.getElementById('monthlyReportsContainer');
+
+            // State Variables
+            let savingsData = [];
+            let goalData = null;
+            let chartInstance = null;
             
             const savedTheme = localStorage.getItem('theme');
             
@@ -414,5 +396,10 @@
                 updateTheme(!isDark);
             });
             
-            // This function is called once the user is authenticated by Firebase
-       
+            // Tab Switching Logic
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    tabContents.forEach(content => content.classList.add('hidden'));
+            
