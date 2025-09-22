@@ -13,6 +13,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // Global variables provided by the environment, which will contain the Firebase config and auth token
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -25,6 +26,7 @@
         
         // We will store our authenticated user here
         let userId = null;
+
         // Sign in the user on page load
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -36,6 +38,7 @@
                 await signInAnonymously(auth).catch(error => console.error("Firebase Auth Error:", error));
             }
         });
+
         // Store references globally for our main script to access
         window.firebase = {
             db,
@@ -74,6 +77,7 @@
             background: -webkit-linear-gradient(to right, #414345, #2326);
             background: linear-gradient(to right, #414345, #2326);
         }
+
         /* Liquid Background Animation */
         .liquid-bg {
             position: fixed;
@@ -117,6 +121,7 @@
             50% { transform: translate(-45%, -55%) scale(1) rotate(-8deg); }
             100% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
         }
+
         .glass-container {
             background-color: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(20px) saturate(200%);
@@ -125,11 +130,13 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
         }
+
         .dark .glass-container {
             background-color: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
+
         .glass-card {
             background-color: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(15px);
@@ -137,24 +144,29 @@
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
+
         .dark .glass-card {
             background-color: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+
         .glass-input {
             background-color: rgba(255, 255, 255, 0.4);
             border-color: rgba(255, 255, 255, 0.3);
             transition: all 0.3s ease;
         }
+
         .dark .glass-input {
             background-color: rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.1);
         }
+
         .glass-input:focus {
             outline: none;
             border-color: #64b5f6;
             box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.4);
         }
+
         .action-button {
             transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
             filter: saturate(1.2);
@@ -209,12 +221,14 @@
         .dark .button-gradient-gray {
             background-image: linear-gradient(45deg, #757575, #9e9e9e);
         }
+
         .tab-button.active {
             background-color: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
+
         .dark .tab-button.active {
             background-color: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -229,6 +243,7 @@
 <body class="flex flex-col items-center justify-start min-h-screen p-4 transition-colors duration-500">
     <div class="liquid-bg"></div>
     <div class="liquid-bg-2"></div>
+
     <div class="glass-container w-full max-w-lg p-6 md:p-8 space-y-6 overflow-y-auto">
         
         <!-- Header with Dark Mode Toggle -->
@@ -251,6 +266,7 @@
                 </svg>
             </button>
         </div>
+
         <!-- Navigation Tabs -->
         <div class="flex justify-around items-center bg-transparent rounded-full p-1 mb-4 flex-wrap">
             <button id="dashboardTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200 whitespace-nowrap">Dashboard</button>
@@ -258,6 +274,7 @@
             <button id="historyTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200 whitespace-nowrap">History</button>
             <button id="reportsTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200 whitespace-nowrap">Reports</button>
         </div>
+
         <!-- Dashboard View -->
         <div id="dashboardView" class="tab-content space-y-6">
             <!-- Total Saved Section -->
@@ -273,8 +290,10 @@
                 </div>
             </div>
         </div>
+
         <!-- Add & Goal View -->
         <div id="addGoalView" class="tab-content space-y-6 hidden">
+
             <!-- Savings Goal Section -->
             <div class="glass-card p-5 space-y-4">
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Set a Goal</h2>
@@ -296,8 +315,10 @@
                     Reset Goal
                 </button>
             </div>
+
             <!-- Separator -->
             <div class="border-b border-gray-200 dark:border-white dark:border-opacity-20"></div>
+
             <!-- Add Entry Form -->
             <div class="glass-card p-5 space-y-4">
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Add a New Entry</h2>
@@ -322,6 +343,7 @@
                 <p id="message" class="mt-3 text-sm text-red-500 hidden"></p>
             </div>
         </div>
+
         <!-- History View -->
         <div id="historyView" class="tab-content space-y-6 hidden">
              <!-- Savings History with Filter -->
@@ -353,6 +375,7 @@
                 </div>
             </div>
         </div>
+
     </div>
     
     <script type="module">
@@ -362,12 +385,15 @@
             const sunIcon = document.getElementById('sunIcon');
             const moonIcon = document.getElementById('moonIcon');
             const body = document.body;
+
             const tabs = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
+
             const totalSavedEl = document.getElementById('totalSaved');
             const savingsChartCtx = document.getElementById('savingsChart').getContext('2d');
             const savingsListEl = document.getElementById('savingsList');
             const filterCategoryEl = document.getElementById('filterCategory');
+
             const amountInput = document.getElementById('amountInput');
             const noteInput = document.getElementById('noteInput');
             const categorySelect = document.getElementById('categorySelect');
@@ -378,4 +404,3 @@
             const goalInput = document.getElementById('goalInput');
             const setGoalButton = document.getElementById('setGoalButton');
             const resetGoalButton = document.getElementById('resetGoalButton');
-            const goalProg
