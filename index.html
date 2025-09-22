@@ -8,6 +8,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        setLogLevel('debug'); // For debugging in the console
+
+        window.firebase = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs };
+    </script>
+
     <style>
         :root {
             color-scheme: light;
@@ -212,6 +224,7 @@
                 <p class="mt-2 text-black dark:text-white text-sm md:text-base">
                     Track your savings with ease.
                 </p>
+                <p id="userIdDisplay" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Authenticating...</p>
             </div>
             <button id="themeToggle" class="w-10 h-10 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 rounded-full" aria-label="Toggle dark mode">
                 <svg id="moonIcon" class="w-6 h-6 text-gray-800 dark:text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="display:none;">
@@ -334,71 +347,51 @@
 
     </div>
     
-    <script>
-        // The core logic is now wrapped in a function that is called on window load.
-        // This ensures all DOM elements are available before we try to manipulate them.
-        function initApp() {
-            // Caching DOM Elements
-            const themeToggle = document.getElementById('themeToggle');
-            const sunIcon = document.getElementById('sunIcon');
-            const moonIcon = document.getElementById('moonIcon');
-            const body = document.body;
-            
-            const tabs = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-            const totalSavedEl = document.getElementById('totalSaved');
-            const savingsChartCtx = document.getElementById('savingsChart').getContext('2d');
-            const savingsListEl = document.getElementById('savingsList');
-            const filterCategoryEl = document.getElementById('filterCategory');
-            const amountInput = document.getElementById('amountInput');
-            const noteInput = document.getElementById('noteInput');
-            const categorySelect = document.getElementById('categorySelect');
-            const actionButton = document.getElementById('actionButton');
-            const cancelButton = document.getElementById('cancelButton');
-            const messageEl = document.getElementById('message');
-            const goalNameInput = document.getElementById('goalNameInput');
-            const goalInput = document.getElementById('goalInput');
-            const setGoalButton = document.getElementById('setGoalButton');
-            const resetGoalButton = document.getElementById('resetGoalButton');
-            const goalProgressBar = document.getElementById('goalProgressBar');
-            const goalProgressText = document.getElementById('goalProgressText');
-            const goalRemainingText = document.getElementById('goalRemainingText');
-            const monthlyReportsContainer = document.getElementById('monthlyReportsContainer');
+    <script type="module">
+        // Import Firebase functions from the window object
+        const {
+            initializeApp,
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            onAuthStateChanged,
+            getFirestore,
+            doc,
+            addDoc,
+            setDoc,
+            updateDoc,
+            deleteDoc,
+            onSnapshot,
+            collection,
+            getDocs
+        } = window.firebase;
+        
+        // Firebase global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-            // State Variables
-            let savingsData = [];
-            let goalData = null;
-            let chartInstance = null;
-            
-            const savedTheme = localStorage.getItem('theme');
-            
-            // Theme Toggling Logic
-            const updateTheme = (isDark) => {
-                if (isDark) {
-                    body.classList.add('dark');
-                    sunIcon.style.display = 'block';
-                    moonIcon.style.display = 'none';
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    body.classList.remove('dark');
-                    sunIcon.style.display = 'none';
-                    moonIcon.style.display = 'block';
-                    localStorage.setItem('theme', 'light');
-                }
-            };
-            
-            if (savedTheme) {
-                updateTheme(savedTheme === 'dark');
-            } else {
-                updateTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
-            }
-            
-            themeToggle.addEventListener('click', () => {
-                const isDark = body.classList.contains('dark');
-                updateTheme(!isDark);
-            });
-            
-            // Tab Switching Logic
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classLis
+        // Caching DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        const body = document.body;
+        const tabs = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const totalSavedEl = document.getElementById('totalSaved');
+        const savingsChartCtx = document.getElementById('savingsChart').getContext('2d');
+        const savingsListEl = document.getElementById('savingsList');
+        const filterCategoryEl = document.getElementById('filterCategory');
+        const amountInput = document.getElementById('amountInput');
+        const noteInput = document.getElementById('noteInput');
+        const categorySelect = document.getElementById('categorySelect');
+        const actionButton = document.getElementById('actionButton');
+        const cancelButton = document.getElementById('cancelButton');
+        const messageEl = document.getElementById('message');
+        const goalNameInput = document.getElementById('goalNameInput');
+        const goalInput = document.getElementById('goalInput');
+        const setGoalButton = document.getElementById('setGoalButton');
+        const resetGoalButton = document.getElementById('resetGoalButton');
+        const goalProgressBar = document.getElementById('goalProgressBar');
+        const goalProgressText = document.getElementById('goalProgressText');
+        const goalRemai
