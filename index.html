@@ -385,22 +385,34 @@
             const sunIcon = document.getElementById('sunIcon');
             const moonIcon = document.getElementById('moonIcon');
             const body = document.body;
-
-            const tabs = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            const totalSavedEl = document.getElementById('totalSaved');
-            const savingsChartCtx = document.getElementById('savingsChart').getContext('2d');
-            const savingsListEl = document.getElementById('savingsList');
-            const filterCategoryEl = document.getElementById('filterCategory');
-
-            const amountInput = document.getElementById('amountInput');
-            const noteInput = document.getElementById('noteInput');
-            const categorySelect = document.getElementById('categorySelect');
-            const actionButton = document.getElementById('actionButton');
-            const cancelButton = document.getElementById('cancelButton');
-            const messageEl = document.getElementById('message');
-            const goalNameInput = document.getElementById('goalNameInput');
-            const goalInput = document.getElementById('goalInput');
-            const setGoalButton = document.getElementById('setGoalButton');
-            const resetGoalButton = document.getElementById('resetGoalButton');
+            
+            const savedTheme = localStorage.getItem('theme');
+            
+            // Theme Toggling Logic
+            const updateTheme = (isDark) => {
+                if (isDark) {
+                    body.classList.add('dark');
+                    sunIcon.style.display = 'block';
+                    moonIcon.style.display = 'none';
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    body.classList.remove('dark');
+                    sunIcon.style.display = 'none';
+                    moonIcon.style.display = 'block';
+                    localStorage.setItem('theme', 'light');
+                }
+            };
+            
+            if (savedTheme) {
+                updateTheme(savedTheme === 'dark');
+            } else {
+                updateTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+            }
+            
+            themeToggle.addEventListener('click', () => {
+                const isDark = body.classList.contains('dark');
+                updateTheme(!isDark);
+            });
+            
+            // This function is called once the user is authenticated by Firebase
+       
