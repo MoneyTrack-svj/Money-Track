@@ -11,8 +11,8 @@
     <!-- Firebase SDK Imports -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, query, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // IMPORTANT: REPLACE THESE VALUES WITH YOUR OWN FIREBASE CONFIG FROM THE CONSOLE
         const firebaseConfig = {
@@ -21,32 +21,40 @@
             projectId: "moneytracker-svj",
             storageBucket: "moneytracker-svj.firebasestorage.app",
             messagingSenderId: "828220197607",
-            appId: "moneytracker-svj"
+            appId: "1:828220197607:web:15390fdbbbee3ee6d2f042"
         };
-        const appId = firebaseConfig.projectId; // Use your project ID as the app ID
-        const initialAuthToken = null; // We are not using a custom token here
-
+        const __app_id = firebaseConfig.projectId;
+        
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        
+        // We will store our authenticated user here
+        let userId = null;
 
+        // Sign in the user anonymously on page load
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log("User is signed in:", userId);
+                window.setupApp(db, auth, userId, __app_id);
+            } else {
+                console.log("Signing in anonymously...");
+                await signInAnonymously(auth).catch(error => console.error("Firebase Auth Error:", error));
+            }
+        });
+
+        // Store references globally for our main script to access
         window.firebase = {
             db,
             auth,
-            appId,
-            initialAuthToken,
-            onAuthStateChanged,
-            signInAnonymously,
-            signInWithCustomToken,
             collection,
             doc,
             addDoc,
             setDoc,
             deleteDoc,
-            onSnapshot,
-            query,
-            orderBy
+            onSnapshot
         };
     </script>
     
@@ -401,9 +409,4 @@
             const goalNameInput = document.getElementById('goalNameInput');
             const goalInput = document.getElementById('goalInput');
             const setGoalButton = document.getElementById('setGoalButton');
-            const resetGoalButton = document.getElementById('resetGoalButton');
-            const goalProgressBar = document.getElementById('goalProgressBar');
-            const goalProgressText = document.getElementById('goalProgressText');
-            const goalRemainingText = document.getElementById('goalRemainingText');
-            
-            const monthlyReportsContainer = document.ge
+            const resetGoalButton = document.ge
