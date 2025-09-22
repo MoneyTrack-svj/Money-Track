@@ -335,7 +335,9 @@
     </div>
     
     <script>
-        window.onload = function() {
+        // The core logic is now wrapped in a function that is called on window load.
+        // This ensures all DOM elements are available before we try to manipulate them.
+        function initApp() {
             // Caching DOM Elements
             const themeToggle = document.getElementById('themeToggle');
             const sunIcon = document.getElementById('sunIcon');
@@ -399,7 +401,4 @@
             // Tab Switching Logic
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    tabContents.forEach(content => content.classList.add('hidden'));
-            
+                    tabs.forEach(t => t.classLis
