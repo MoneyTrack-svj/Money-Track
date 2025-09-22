@@ -1,389 +1,409 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Money Tracker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <style>
-        :root {
-            color-scheme: light;
-        }
-        .dark {
-            color-scheme: dark;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #e0eafc; /* Light blue background for light mode */
-            background: -webkit-linear-gradient(to right, #cfdef3, #e0eafc);
-            background: linear-gradient(to right, #cfdef3, #e0eafc);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 1rem;
-            transition: all 0.5s ease;
-            position: relative;
-        }
-        .dark body {
-            background: #232526; /* Dark gradient for dark mode */
-            background: -webkit-linear-gradient(to right, #414345, #232526);
-            background: linear-gradient(to right, #414345, #2326);
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, query, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        /* Liquid Background Animation */
-        .liquid-bg {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 800px;
-            height: 800px;
-            background: radial-gradient(circle at 50% 50%, #64b5f6, transparent);
-            filter: blur(80px);
-            opacity: 0.6;
-            animation: liquid-pulse 10s ease-in-out infinite;
-            pointer-events: none;
-            z-index: -1;
-        }
-        .liquid-bg-2 {
-            position: fixed;
-            bottom: 20%;
-            right: 15%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle at 50% 50%, #42a5f5, transparent);
-            filter: blur(60px);
-            opacity: 0.5;
-            animation: liquid-pulse-2 12s ease-in-out infinite reverse;
-            pointer-events: none;
-            z-index: -1;
-        }
-        .dark .liquid-bg {
-            background: radial-gradient(circle at 50% 50%, #1e88e5, transparent);
-        }
-        .dark .liquid-bg-2 {
-            background: radial-gradient(circle at 50% 50%, #1976d2, transparent);
-        }
-        @keyframes liquid-pulse {
-            0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
-            50% { transform: translate(-55%, -45%) scale(1.1) rotate(5deg); }
-            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
-        }
-        @keyframes liquid-pulse-2 {
-            0% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
-            50% { transform: translate(-45%, -55%) scale(1) rotate(-8deg); }
-            100% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
-        }
+        // IMPORTANT: REPLACE THESE VALUES WITH YOUR OWN FIREBASE CONFIG FROM THE CONSOLE
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5BX56VIOHrrkLFzX7n6adaRHZJ9eh9f4",
+            authDomain: "moneytracker-svj.firebaseapp.com",
+            projectId: "moneytracker-svj",
+            storageBucket: "moneytracker-svj.firebasestorage.app",
+            messagingSenderId: "828220197607",
+            appId: "moneytracker-svj"
+        };
+        const appId = firebaseConfig.projectId; // Use your project ID as the app ID
+        const initialAuthToken = null; // We are not using a custom token here
 
-        .glass-container {
-            background-color: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(20px) saturate(200%);
-            -webkit-backdrop-filter: blur(20px) saturate(200%);
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-        }
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        .dark .glass-container {
-            background-color: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
+        window.firebase = {
+            db,
+            auth,
+            appId,
+            initialAuthToken,
+            onAuthStateChanged,
+            signInAnonymously,
+            signInWithCustomToken,
+            collection,
+            doc,
+            addDoc,
+            setDoc,
+            deleteDoc,
+            onSnapshot,
+            query,
+            orderBy
+        };
+    </script>
+    
+    <style>
+        :root {
+            color-scheme: light;
+        }
+        .dark {
+            color-scheme: dark;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #e0eafc;
+            background: -webkit-linear-gradient(to right, #cfdef3, #e0eafc);
+            background: linear-gradient(to right, #cfdef3, #e0eafc);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            transition: all 0.5s ease;
+            position: relative;
+        }
+        .dark body {
+            background: #232526;
+            background: -webkit-linear-gradient(to right, #414345, #232526);
+            background: linear-gradient(to right, #414345, #2326);
+        }
 
-        .glass-card {
-            background-color: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        /* Liquid Background Animation */
+        .liquid-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle at 50% 50%, #64b5f6, transparent);
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: liquid-pulse 10s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .liquid-bg-2 {
+            position: fixed;
+            bottom: 20%;
+            right: 15%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle at 50% 50%, #42a5f5, transparent);
+            filter: blur(60px);
+            opacity: 0.5;
+            animation: liquid-pulse-2 12s ease-in-out infinite reverse;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .dark .liquid-bg {
+            background: radial-gradient(circle at 50% 50%, #1e88e5, transparent);
+        }
+        .dark .liquid-bg-2 {
+            background: radial-gradient(circle at 50% 50%, #1976d2, transparent);
+        }
+        @keyframes liquid-pulse {
+            0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            50% { transform: translate(-55%, -45%) scale(1.1) rotate(5deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+        }
+        @keyframes liquid-pulse-2 {
+            0% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
+            50% { transform: translate(-45%, -55%) scale(1) rotate(-8deg); }
+            100% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
+        }
 
-        .dark .glass-card {
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
+        .glass-container {
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px) saturate(200%);
+            -webkit-backdrop-filter: blur(20px) saturate(200%);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
 
-        .glass-input {
-            background-color: rgba(255, 255, 255, 0.4);
-            border-color: rgba(255, 255, 255, 0.3);
-            transition: all 0.3s ease;
-        }
+        .dark .glass-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
 
-        .dark .glass-input {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
 
-        .glass-input:focus {
-            outline: none;
-            border-color: #64b5f6;
-            box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.4);
-        }
+        .dark .glass-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-        .action-button {
-            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-            filter: saturate(1.2);
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .action-button::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
-            transition: transform 0.5s ease-out;
-            transform: translate(-50%, -50%) scale(0);
-        }
-        .action-button:hover::before {
-            transform: translate(-50%, -50%) scale(1);
-        }
-        .action-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            filter: saturate(1.5);
-        }
-        .action-button:active {
-            transform: translateY(1px);
-            box-shadow: 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .button-gradient-blue {
-            background-image: linear-gradient(45deg, #42a5f5, #64b5f6);
-        }
-        .button-gradient-green {
-            background-image: linear-gradient(45deg, #66bb6a, #81c784);
-        }
-        .button-gradient-red {
-            background-image: linear-gradient(45deg, #ef5350, #e57373);
-        }
-        .button-gradient-gray {
-            background-image: linear-gradient(45deg, #bdbdbd, #e0e0e0);
-        }
-        .dark .button-gradient-blue {
-            background-image: linear-gradient(45deg, #1e88e5, #42a5f5);
-        }
-        .dark .button-gradient-green {
-            background-image: linear-gradient(45deg, #43a047, #66bb6a);
-        }
-        .dark .button-gradient-red {
-            background-image: linear-gradient(45deg, #d32f2f, #e57373);
-        }
-        .dark .button-gradient-gray {
-            background-image: linear-gradient(45deg, #757575, #9e9e9e);
-        }
+        .glass-input {
+            background-color: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
 
-        .tab-button.active {
-            background-color: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        .dark .glass-input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
 
-        .dark .tab-button.active {
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-    </style>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-        }
-    </script>
+        .glass-input:focus {
+            outline: none;
+            border-color: #64b5f6;
+            box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.4);
+        }
+
+        .action-button {
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            filter: saturate(1.2);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .action-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+            transition: transform 0.5s ease-out;
+            transform: translate(-50%, -50%) scale(0);
+        }
+        .action-button:hover::before {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            filter: saturate(1.5);
+        }
+        .action-button:active {
+            transform: translateY(1px);
+            box-shadow: 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .button-gradient-blue {
+            background-image: linear-gradient(45deg, #42a5f5, #64b5f6);
+        }
+        .button-gradient-green {
+            background-image: linear-gradient(45deg, #66bb6a, #81c784);
+        }
+        .button-gradient-red {
+            background-image: linear-gradient(45deg, #ef5350, #e57373);
+        }
+        .button-gradient-gray {
+            background-image: linear-gradient(45deg, #bdbdbd, #e0e0e0);
+        }
+        .dark .button-gradient-blue {
+            background-image: linear-gradient(45deg, #1e88e5, #42a5f5);
+        }
+        .dark .button-gradient-green {
+            background-image: linear-gradient(45deg, #43a047, #66bb6a);
+        }
+        .dark .button-gradient-red {
+            background-image: linear-gradient(45deg, #d32f2f, #e57373);
+        }
+        .dark .button-gradient-gray {
+            background-image: linear-gradient(45deg, #757575, #9e9e9e);
+        }
+
+        .tab-button.active {
+            background-color: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark .tab-button.active {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
 </head>
 <body class="flex flex-col items-center justify-start min-h-screen p-4 transition-colors duration-500">
-    <div class="liquid-bg"></div>
-    <div class="liquid-bg-2"></div>
+    <div class="liquid-bg"></div>
+    <div class="liquid-bg-2"></div>
 
-    <div class="glass-container w-full max-w-lg p-6 md:p-8 space-y-6 overflow-y-auto">
-        
-        <!-- Header with Dark Mode Toggle -->
-        <div class="flex justify-between items-center mb-4">
-            <div class="flex-1"></div>
-            <div class="text-center">
-                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-white">
-                    💰 Money Tracker
-                </h1>
-                <p class="mt-2 text-black dark:text-white text-sm md:text-base">
-                    Track your savings with ease.
-                </p>
-            </div>
-            <button id="themeToggle" class="w-10 h-10 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 rounded-full" aria-label="Toggle dark mode">
-                <svg id="moonIcon" class="w-6 h-6 text-gray-800 dark:text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="display:none;">
-                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-                </svg>
-                <svg id="sunIcon" class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="display:none;">
-                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 11a1 1 0 01.707.293l.707.707a1 1 0 01-1.414 1.414l-.707-.707A1 1 0 0114 13zm-4 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4-11a1 1 0 01.707-.293l.707-.707a1 1 0 111.414 1.414L7.414 7.707A1 1 0 016 7zm10 0a1 1 0 01.707.293l.707.707a1 1 0 11-1.414 1.414l-.707-.707A1 1 0 0116 7zm-4 4a1 1 0 000 2h1a1 1 0 100-2h-1zm-2 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-2-4a1 1 0 00-1 1v1a1 1 0 100-2h1zm-4-4a1 1 0 01-.707.293l-.707.707a1 1 0 11-1.414-1.414l.707-.707A1 1 0 014 6z" clip-rule="evenodd" />
-                </svg>
-            </button>
-        </div>
+    <div class="glass-container w-full max-w-lg p-6 md:p-8 space-y-6 overflow-y-auto">
+        
+        <!-- Header with Dark Mode Toggle -->
+        <div class="flex justify-between items-center mb-4">
+            <div class="flex-1"></div>
+            <div class="text-center">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-white">
+                    💰 Money Tracker
+                </h1>
+                <p class="mt-2 text-black dark:text-white text-sm md:text-base">
+                    Track your savings with ease.
+                </p>
+            </div>
+            <button id="themeToggle" class="w-10 h-10 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 rounded-full" aria-label="Toggle dark mode">
+                <svg id="moonIcon" class="w-6 h-6 text-gray-800 dark:text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                </svg>
+                <svg id="sunIcon" class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 11a1 1 0 01.707.293l.707.707a1 1 0 01-1.414 1.414l-.707-.707A1 1 0 0114 13zm-4 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4-11a1 1 0 01.707-.293l.707-.707a1 1 0 111.414 1.414L7.414 7.707A1 1 0 016 7zm10 0a1 1 0 01.707.293l.707.707a1 1 0 11-1.414 1.414l-.707-.707A1 1 0 0116 7zm-4 4a1 1 0 000 2h1a1 1 0 100-2h-1zm-2 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-2-4a1 1 0 00-1 1v1a1 1 0 100-2h1zm-4-4a1 1 0 01-.707.293l-.707.707a1 1 0 11-1.414-1.414l.707-.707A1 1 0 014 6z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
 
-        <!-- Navigation Tabs -->
-        <div class="flex justify-between items-center bg-transparent rounded-full px-2 py-1 mb-4">
-            <button id="dashboardTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200">Dashboard</button>
-            <button id="addGoalTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200">Add & Goal</button>
-            <button id="historyTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200">History</button>
-            <button id="reportsTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200">Reports</button>
-        </div>
+        <!-- Navigation Tabs -->
+        <div class="flex justify-between items-center bg-transparent rounded-full px-2 py-1 mb-4">
+            <button id="dashboardTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200">Dashboard</button>
+            <button id="addGoalTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200">Add & Goal</button>
+            <button id="historyTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200">History</button>
+            <button id="reportsTab" class="tab-button flex-1 p-2 rounded-full text-sm font-semibold text-gray-800 dark:text-white transition-colors duration-200">Reports</button>
+        </div>
 
-        <!-- Dashboard View -->
-        <div id="dashboardView" class="tab-content space-y-6">
-            <!-- Total Saved Section -->
-            <div class="glass-card p-6 shadow-lg">
-                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Saved</p>
-                <p id="totalSaved" class="text-4xl md:text-5xl font-bold mt-1 text-gray-900 dark:text-white tracking-tight">$0.00</p>
-            </div>
-            <!-- Chart Section -->
-            <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Savings Chart</h2>
-                <div class="glass-card p-4">
-                    <canvas id="savingsChart"></canvas>
-                </div>
-            </div>
-        </div>
+        <!-- Dashboard View -->
+        <div id="dashboardView" class="tab-content space-y-6">
+            <!-- Total Saved Section -->
+            <div class="glass-card p-6 shadow-lg">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Saved</p>
+                <p id="totalSaved" class="text-4xl md:text-5xl font-bold mt-1 text-gray-900 dark:text-white tracking-tight">$0.00</p>
+            </div>
+            <!-- Chart Section -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Savings Chart</h2>
+                <div class="glass-card p-4">
+                    <canvas id="savingsChart"></canvas>
+                </div>
+            </div>
+        </div>
 
-        <!-- Add & Goal View -->
-        <div id="addGoalView" class="tab-content space-y-6 hidden">
+        <!-- Add & Goal View -->
+        <div id="addGoalView" class="tab-content space-y-6 hidden">
 
-            <!-- Savings Goal Section -->
-            <div class="glass-card p-5 space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Set a Goal</h2>
-                <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                    <input type="text" id="goalNameInput" placeholder="Goal name (e.g., 'New Car')" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-300">
-                    <input type="number" id="goalInput" placeholder="Goal amount" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-300">
-                </div>
-                <div id="goalProgressContainer" class="w-full bg-white/20 rounded-full h-4 relative">
-                    <div id="goalProgressBar" class="bg-blue-500 h-full rounded-full transition-all duration-500 ease-in-out" style="width: 0%;"></div>
-                </div>
-                <div class="flex justify-between items-center text-sm font-medium text-gray-800 dark:text-white">
-                    <span id="goalProgressText"></span>
-                    <span id="goalRemainingText"></span>
-                </div>
-                <button id="setGoalButton" class="w-full px-6 py-3 rounded-xl text-lg font-semibold text-white action-button button-gradient-blue shadow-lg">
-                    Set Goal
-                </button>
-                <button id="resetGoalButton" class="w-full px-6 py-3 rounded-xl text-lg font-semibold text-white action-button button-gradient-red shadow-lg mt-2">
-                    Reset Goal
-                </button>
-            </div>
+            <!-- Savings Goal Section -->
+            <div class="glass-card p-5 space-y-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Set a Goal</h2>
+                <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                    <input type="text" id="goalNameInput" placeholder="Goal name (e.g., 'New Car')" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-300">
+                    <input type="number" id="goalInput" placeholder="Goal amount" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-300">
+                </div>
+                <div id="goalProgressContainer" class="w-full bg-white/20 rounded-full h-4 relative">
+                    <div id="goalProgressBar" class="bg-blue-500 h-full rounded-full transition-all duration-500 ease-in-out" style="width: 0%;"></div>
+                </div>
+                <div class="flex justify-between items-center text-sm font-medium text-gray-800 dark:text-white">
+                    <span id="goalProgressText"></span>
+                    <span id="goalRemainingText"></span>
+                </div>
+                <button id="setGoalButton" class="w-full px-6 py-3 rounded-xl text-lg font-semibold text-white action-button button-gradient-blue shadow-lg">
+                    Set Goal
+                </button>
+                <button id="resetGoalButton" class="w-full px-6 py-3 rounded-xl text-lg font-semibold text-white action-button button-gradient-red shadow-lg mt-2">
+                    Reset Goal
+                </button>
+            </div>
 
-            <!-- Separator -->
-            <div class="border-b border-gray-200 dark:border-white dark:border-opacity-20"></div>
+            <!-- Separator -->
+            <div class="border-b border-gray-200 dark:border-white dark:border-opacity-20"></div>
 
-            <!-- Add Entry Form -->
-            <div class="glass-card p-5 space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Add a New Entry</h2>
-                <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                    <input type="number" id="amountInput" placeholder="Enter amount saved" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-300">
-                    <input type="text" id="noteInput" placeholder="Add a note (optional)" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-300">
-                    <select id="categorySelect" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white">
-                        <option value="Uncategorized">Uncategorized</option>
-                        <option value="Vacation Fund">Vacation Fund</option>
-                        <option value="Emergency Fund">Emergency Fund</option>
-                        <option value="Personal Goal">Personal Goal</option>
-                    </select>
-                </div>
-                <div class="flex space-x-2 mt-4">
-                    <button id="actionButton" class="w-full px-6 py-3 rounded-xl text-lg font-semibold text-white action-button button-gradient-green shadow-lg" data-editing-index="-1">
-                        Save
-                    </button>
-                    <button id="cancelButton" class="w-full px-6 py-3 rounded-xl text-lg font-semibold text-white action-button button-gradient-gray shadow-lg hidden">
-                        Cancel
-                    </button>
-                </div>
-                <p id="message" class="mt-3 text-sm text-red-500 hidden"></p>
-            </div>
-        </div>
+            <!-- Add Entry Form -->
+            <div class="glass-card p-5 space-y-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Add a New Entry</h2>
+                <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                    <input type="number" id="amountInput" placeholder="Enter amount saved" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-300">
+                    <input type="text" id="noteInput" placeholder="Add a note (optional)" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-300">
+                    <select id="categorySelect" class="w-full p-3 text-lg rounded-xl border-2 glass-input text-gray-800 dark:text-white">
+                        <option value="Uncategorized">Uncategorized</option>
+                        <option value="Vacation Fund">Vacation Fund</option>
+                        <option value="Emergency Fund">Emergency Fund</option>
+                        <option value="Personal Goal">Personal Goal</option>
+                    </select>
+                </div>
+                <div class="flex space-x-2 mt-4">
+                    <button id="actionButton" class="w-full px-6 py-3 rounded-xl text-lg font-semibold text-white action-button button-gradient-green shadow-lg" data-editing-index="-1">
+                        Save
+                    </button>
+                    <button id="cancelButton" class="w-full px-6 py-3 rounded-xl text-lg font-semibold text-white action-button button-gradient-gray shadow-lg hidden">
+                        Cancel
+                    </button>
+                </div>
+                <p id="message" class="mt-3 text-sm text-red-500 hidden"></p>
+            </div>
+        </div>
 
-        <!-- History View -->
-        <div id="historyView" class="tab-content space-y-6 hidden">
-             <!-- Savings History with Filter -->
-            <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Recent Entries</h2>
-                <div class="flex items-center space-x-2">
-                    <label for="filterCategory" class="text-sm font-medium text-gray-800 dark:text-white">Filter by Category:</label>
-                    <select id="filterCategory" class="flex-1 p-2 rounded-xl border-2 glass-input text-gray-800 dark:text-white">
-                        <option value="All">All Categories</option>
-                        <option value="Uncategorized">Uncategorized</option>
-                        <option value="Vacation Fund">Vacation Fund</option>
-                        <option value="Emergency Fund">Emergency Fund</option>
-                        <option value="Personal Goal">Personal Goal</option>
-                    </select>
-                </div>
-                <ul id="savingsList" class="glass-card divide-y divide-gray-200 dark:divide-white dark:divide-opacity-20 max-h-64 overflow-y-auto">
-                    <li class="p-4 text-center text-gray-500 dark:text-gray-400">No savings entries yet.</li>
-                </ul>
-            </div>
-        </div>
-        
-        <!-- Reports View -->
-        <div id="reportsView" class="tab-content space-y-6 hidden">
-            <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Monthly Reports</h2>
-                <div id="monthlyReportsContainer" class="space-y-4">
-                    <!-- Monthly reports will be dynamically added here -->
-                    <div class="glass-card p-4 text-center text-gray-500 dark:text-gray-400">No reports to display.</div>
-                </div>
-            </div>
-        </div>
+        <!-- History View -->
+        <div id="historyView" class="tab-content space-y-6 hidden">
+             <!-- Savings History with Filter -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Recent Entries</h2>
+                <div class="flex items-center space-x-2">
+                    <label for="filterCategory" class="text-sm font-medium text-gray-800 dark:text-white">Filter by Category:</label>
+                    <select id="filterCategory" class="flex-1 p-2 rounded-xl border-2 glass-input text-gray-800 dark:text-white">
+                        <option value="All">All Categories</option>
+                        <option value="Uncategorized">Uncategorized</option>
+                        <option value="Vacation Fund">Vacation Fund</option>
+                        <option value="Emergency Fund">Emergency Fund</option>
+                        <option value="Personal Goal">Personal Goal</option>
+                    </select>
+                </div>
+                <ul id="savingsList" class="glass-card divide-y divide-gray-200 dark:divide-white dark:divide-opacity-20 max-h-64 overflow-y-auto">
+                    <li class="p-4 text-center text-gray-500 dark:text-gray-400">No savings entries yet.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Reports View -->
+        <div id="reportsView" class="tab-content space-y-6 hidden">
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Monthly Reports</h2>
+                <div id="monthlyReportsContainer" class="space-y-4">
+                    <!-- Monthly reports will be dynamically added here -->
+                    <div class="glass-card p-4 text-center text-gray-500 dark:text-gray-400">No reports to display.</div>
+                </div>
+            </div>
+        </div>
 
-    </div>
-    
-    <script>
-        window.onload = function() {
-            // Caching DOM Elements
-            const themeToggle = document.getElementById('themeToggle');
-            const sunIcon = document.getElementById('sunIcon');
-            const moonIcon = document.getElementById('moonIcon');
-            const body = document.body;
-            const tabs = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
+    </div>
+    
+    <script type="module">
+        window.onload = function() {
+            // Caching DOM Elements
+            const themeToggle = document.getElementById('themeToggle');
+            const sunIcon = document.getElementById('sunIcon');
+            const moonIcon = document.getElementById('moonIcon');
+            const body = document.body;
 
-            // Theme Toggling Logic
-            const updateTheme = (isDark) => {
-                if (isDark) {
-                    body.classList.add('dark');
-                    sunIcon.style.display = 'block';
-                    moonIcon.style.display = 'none';
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    body.classList.remove('dark');
-                    sunIcon.style.display = 'none';
-                    moonIcon.style.display = 'block';
-                    localStorage.setItem('theme', 'light');
-                }
-            };
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                updateTheme(savedTheme === 'dark');
-            } else {
-                updateTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
-            }
-            themeToggle.addEventListener('click', () => {
-                const isDark = body.classList.contains('dark');
-                updateTheme(!isDark);
-            });
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
 
-            // Tab Switching Logic
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    tabContents.forEach(content => content.classList.add('hidden'));
-                    document.getElementById(tab.id.replace('Tab', 'View')).classList.remove('hidden');
-                });
-            });
+            const totalSavedEl = document.getElementById('totalSaved');
+            const savingsChartCtx = document.getElementById('savingsChart').getContext('2d');
+            const savingsListEl = document.getElementById('savingsList');
+            const filterCategoryEl = document.getElementById('filterCategory');
 
-            // Set initial active tab
-            document.getElementById('dashboardTab').click();
-        };
-    </script>
-</body>
-</html>
-
-                                                
+            const amountInput = document.getElementById('amountInput');
+            const noteInput = document.getElementById('noteInput');
+            const categorySelect = document.getElementById('categorySelect');
+            const actionButton = document.getElementById('actionButton');
+            const cancelButton = document.getElementById('cancelButton');
+            const messageEl = document.getElementById('message');
+            const goalNameInput = document.getElementById('goalNameInput');
+            const goalInput = document.getElementById('goalInput');
+            const setGoalButton = document.getElementById('setGoalButton');
+            const resetGoalButton = document.getElementById('resetGoalButton');
+            const goalProgressBar = document.getElementById('goalProgressBar');
+            const goalProgressText = document.getElementById('goalProgressText');
+            const goalRemainingText = document.getElementById('goalRemainingText');
+            
+            const monthlyReportsContainer = document.ge
